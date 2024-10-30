@@ -87,3 +87,49 @@ func (c *Config) GetValueOrEmpty(name string) string {
 	v, _ := c.GetValue(name)
 	return v
 }
+
+func (c *Config) GetValues(name string) ([]string, error) {
+	config, err := c.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	v := reflect.ValueOf(config)
+
+	// Handle map type
+	if v.Kind() == reflect.Map {
+		key := reflect.ValueOf(name)
+		value := v.MapIndex(key)
+		if !value.IsValid() {
+			return nil, errors.New("Field was not found")
+		}
+		return []string{fmt.Sprintf("%v", value.Interface())}, nil
+	}
+
+	// Ensure that we have a struct and not a pointer to a struct
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	// Check if the field exists
+	field := v.FieldByName(name)
+	if !field.IsValid() {
+		return nil, errors.New("Field was not found")
+	}
+
+	// Handle slice type
+	if field.Kind() == reflect.Slice {
+		var result []string
+		for i := 0; i < field.Len(); i++ {
+			result = append(result, fmt.Sprintf("%v", field.Index(i).Interface()))
+		}
+		return result, nil
+	}
+
+	return []string{field.String()}, nil
+}
+
+func (c *Config) GetValuesOrEmpty(name string) []string {
+	v, _ := c.GetValues(name)
+	return v
+}
