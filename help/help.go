@@ -1,8 +1,8 @@
 package help
 
 import (
-	"github.com/oceanspy/go-cli-starter/src/color"
-	"github.com/oceanspy/go-cli-starter/src/message"
+	"github.com/oceanspy/go-cli-starter/color"
+	"github.com/oceanspy/go-cli-starter/message"
 )
 
 type Content struct {

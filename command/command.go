@@ -2,7 +2,7 @@ package command
 
 import (
 	"errors"
-	"github.com/oceanspy/go-cli-starter/src/message"
+	"github.com/oceanspy/go-cli-starter/message"
 	"os"
 	"slices"
 	"strings"

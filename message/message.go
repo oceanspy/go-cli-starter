@@ -3,7 +3,7 @@ package message
 import (
 	"bufio"
 	"fmt"
-	"github.com/oceanspy/go-cli-starter/src/color"
+	"github.com/oceanspy/go-cli-starter/color"
 	"os"
 	"strings"
 )
