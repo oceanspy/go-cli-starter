@@ -119,10 +119,15 @@ func (c *Config) GetValues(name string) ([]string, error) {
 
 	// Handle slice type
 	if field.Kind() == reflect.Slice {
+		if field.Len() == 0 {
+			return []string{}, nil
+		}
+
 		var result []string
 		for i := 0; i < field.Len(); i++ {
 			result = append(result, fmt.Sprintf("%v", field.Index(i).Interface()))
 		}
+
 		return result, nil
 	}
 
