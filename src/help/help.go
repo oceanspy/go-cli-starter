@@ -81,6 +81,7 @@ func Print(help Content) {
 					message.TextWithoutLn(element)
 					message.TextWithoutLn(color.Reset)
 				default:
+					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
 				}
 			}
