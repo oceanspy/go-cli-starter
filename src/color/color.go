@@ -1,0 +1,41 @@
+package color
+
+import (
+	"strings"
+)
+
+var Reset = "\033[0m" 
+var Red = "\033[31m" 
+var Green = "\033[32m" 
+var Yellow = "\033[33m" 
+var Blue = "\033[34m" 
+var Magenta = "\033[35m" 
+var Cyan = "\033[36m" 
+var Gray = "\033[37m" 
+var White = "\033[97m"
+
+func Get(color string) string {
+	color = strings.ToLower(color)
+	switch color {
+		case "red":
+			return Red
+		case "green":
+			return Green
+		case "yellow":
+			return Yellow
+		case "blue":
+			return Blue
+		case "magenta":
+			return Magenta
+		case "cyan":
+			return Cyan
+		case "gray":
+			return Gray
+		case "white":
+			return White
+		case "reset":
+			return Reset
+		default:
+			return Reset
+	}
+}
