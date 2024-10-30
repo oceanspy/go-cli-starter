@@ -61,8 +61,8 @@ func Print(help Content) {
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
 				}
-				message.Ln()
 			}
+			message.Ln()
 		case "option":
 			for i, element := range line {
 				if i == 0 {
@@ -76,6 +76,7 @@ func Print(help Content) {
 				switch i {
 				case 1:
 					message.TextWithoutLn(color.Blue)
+					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
 					message.TextWithoutLn(color.Reset)
 				default:
