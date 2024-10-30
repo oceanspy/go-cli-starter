@@ -11,6 +11,8 @@ type Content struct {
 }
 
 func Print(help Content) {
+	message.Info("Help Center", help.Title)
+
 	for _, line := range help.Lines {
 		switch line[0] {
 		case "title":
@@ -30,35 +32,35 @@ func Print(help Content) {
 				if i == 0 {
 					continue
 				}
+
+				if len(element) == 0 {
+					continue
+				}
+
 				switch i {
 				case 1:
 					message.TextWithoutLn(color.Red)
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
-					message.TextWithoutLn(" ")
 					message.TextWithoutLn(color.Reset)
 				case 2:
 					message.TextWithoutLn(color.Green)
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
-					message.TextWithoutLn(" ")
 					message.TextWithoutLn(color.Reset)
 				case 3:
 					message.TextWithoutLn(color.Magenta)
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
-					message.TextWithoutLn(" ")
 					message.TextWithoutLn(color.Reset)
 				case 4:
 					message.TextWithoutLn(color.Yellow)
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
-					message.TextWithoutLn(" ")
 					message.TextWithoutLn(color.Reset)
 				default:
 					message.TextWithoutLn(" ")
 					message.TextWithoutLn(element)
-					message.TextWithoutLn(" ")
 				}
 			}
 		default:
