@@ -26,9 +26,9 @@ func Print(help Content) {
 				title += element
 			}
 
-			message.Text("    ", title)
+			message.Title("    ", title)
 		case "cmd":
-			message.Text("    ")
+			message.TextWithoutLn("    ")
 			for i, element := range line {
 				if i == 0 {
 					continue
