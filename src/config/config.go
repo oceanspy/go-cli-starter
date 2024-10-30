@@ -30,7 +30,7 @@ func Construct(filepath string, entity interface{}) (Config, error) {
 
 	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
-		return Config{}, errors.New("Error opening config file")
+		return Config{}, errors.New("Error opening config file: " + configFilePath)
 	}
 
 	return Config{Filepath: configFilePath, YamlFile: yamlFile, DataLoaded: false}, nil
@@ -43,7 +43,7 @@ func (c *Config) Get() (interface{}, error) {
 
 	err := yaml.Unmarshal(c.YamlFile, &c.Data)
 	if err != nil {
-		return c.Data, errors.New("Error parsing config file")
+		return c.Data, errors.New("Error parsing config file. Is it a valid yaml file ?")
 	}
 
 	c.DataLoaded = true
