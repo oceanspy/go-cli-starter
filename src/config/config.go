@@ -72,3 +72,25 @@ func (c *Config) GetValue(name string) (string, error) {
 
 	return field.String(), nil
 }
+
+func (c *Config) GetValueOrEmpty(name string) string {
+	config, err := c.Get()
+	if err != nil {
+		return ""
+	}
+
+	v := reflect.ValueOf(config)
+
+	// Ensure that we have a struct and not a pointer to a struct
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	// Check if the field exists
+	field := v.FieldByName(name)
+	if !field.IsValid() {
+		return ""
+	}
+
+	return field.String()
+}

@@ -60,10 +60,14 @@ if err != nil {
 Or access a specific parameter:
 
 ```go
+// Get with error
 test, err := c.GetValue("test")
 if err != nil {
     //...
 }
+
+// Get without error
+test := c.GetValueOrEmpty("test")
 ```
 
 ## Message/Print
