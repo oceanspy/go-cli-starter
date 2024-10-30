@@ -16,6 +16,7 @@ help.Content{
         {"title", "part 1 Title"},
         {"cmd", "command1", "option1", "option2", "option3"},
         {"cmd", "command2", "option1", "option2", "option3"},
+        {"option", "-o/--option", "Explanation"},
     },
 }
 ```
