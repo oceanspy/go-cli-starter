@@ -64,6 +64,7 @@ func Print(help Content) {
 			}
 			message.Ln()
 		case "option":
+			message.TextWithoutLn("        ")
 			for i, element := range line {
 				if i == 0 {
 					continue
