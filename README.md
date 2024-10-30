@@ -92,6 +92,7 @@ Error(args ...interface{})
 
 // Print a text message
 Text(messages ...string)
+TextWithoutLn(messages ...string)
 
 // Print a title
 Title(messages ...string)

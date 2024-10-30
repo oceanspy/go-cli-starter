@@ -17,7 +17,7 @@ func Print(help Content) {
 	for _, line := range help.Lines {
 		switch line[0] {
 		case "title":
-			message.Text("    ")
+			message.TextWithoutLn("    ")
 			title := ""
 			for i, element := range line {
 				if i == 0 {
@@ -26,7 +26,7 @@ func Print(help Content) {
 				title += element
 			}
 
-			message.Title("    ", title)
+			message.Text("    ", title)
 		case "cmd":
 			message.Text("    ")
 			for i, element := range line {
@@ -35,26 +35,27 @@ func Print(help Content) {
 				}
 				switch i {
 				case 1:
-					message.Text(color.Red)
-					message.Text(element)
-					message.Text(color.Reset)
+					message.TextWithoutLn(color.Red)
+					message.TextWithoutLn(element)
+					message.TextWithoutLn(color.Reset)
 				case 2:
-					message.Text(color.Green)
-					message.Text(element)
-					message.Text(color.Reset)
+					message.TextWithoutLn(color.Green)
+					message.TextWithoutLn(element)
+					message.TextWithoutLn(color.Reset)
 				case 3:
-					message.Text(color.Magenta)
-					message.Text(element)
-					message.Text(color.Reset)
+					message.TextWithoutLn(color.Magenta)
+					message.TextWithoutLn(element)
+					message.TextWithoutLn(color.Reset)
 				case 4:
-					message.Text(color.Yellow)
-					message.Text(element)
-					message.Text(color.Reset)
+					message.TextWithoutLn(color.Yellow)
+					message.TextWithoutLn(element)
+					message.TextWithoutLn(color.Reset)
 				default:
-					message.Text(element)
+					message.TextWithoutLn(element)
 				}
 			}
 		default:
 		}
+		message.Ln()
 	}
 }
