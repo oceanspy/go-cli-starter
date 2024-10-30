@@ -59,6 +59,16 @@ func (c *Config) GetValue(name string) (string, error) {
 
 	v := reflect.ValueOf(config)
 
+	// Handle map type
+	if v.Kind() == reflect.Map {
+		key := reflect.ValueOf(name)
+		value := v.MapIndex(key)
+		if !value.IsValid() {
+			return "", errors.New("Field was not found")
+		}
+		return fmt.Sprintf("%v", value.Interface()), nil
+	}
+
 	// Ensure that we have a struct and not a pointer to a struct
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -74,23 +84,6 @@ func (c *Config) GetValue(name string) (string, error) {
 }
 
 func (c *Config) GetValueOrEmpty(name string) string {
-	config, err := c.Get()
-	if err != nil {
-		return ""
-	}
-
-	v := reflect.ValueOf(config)
-
-	// Ensure that we have a struct and not a pointer to a struct
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
-	}
-
-	// Check if the field exists
-	field := v.FieldByName(name)
-	if !field.IsValid() {
-		return ""
-	}
-
-	return field.String()
+	v, _ := c.GetValue(name)
+	return v
 }
