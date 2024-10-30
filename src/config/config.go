@@ -26,7 +26,7 @@ func Construct(filepath string, entity interface{}) (Config, error) {
 
 	// Get the home directory
 	homeDir := usr.HomeDir
-	configFilePath := homeDir + filepath
+	configFilePath := homeDir + "/" + filepath
 
 	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
