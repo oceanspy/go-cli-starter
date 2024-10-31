@@ -179,7 +179,10 @@ cmdAutocomplete := commandautocomplete.Init(cmdAutocompleteYaml, cmd.Get())
 
 switch cmd.GetAt(1) {
 case "cmd":
-    cmdAutocomplete.Get()
+    autocomplete := cmdAutocomplete.Get()
+    if len(autocomplete) > 0 {
+        message.Text(autocomplete)
+    }
 // ...
 default:
     //...
