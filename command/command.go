@@ -107,7 +107,7 @@ func (c *Command) Count() int {
 }
 
 func (c *Command) Get(at int) (string, error) {
-	if len(c.commands[at]) > at {
+	if len(c.commands) > at {
 		return c.commands[at], nil
 	}
 
