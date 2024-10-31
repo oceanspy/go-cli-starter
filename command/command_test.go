@@ -42,7 +42,7 @@ func TestShortToLongOptionName(t *testing.T) {
 
 }
 
-func TestLen(t *testing.T) {
+func TestCount(t *testing.T) {
 	var optionsNames = map[string]string{
 		"help": "h",
 		"test": "t",
@@ -55,7 +55,7 @@ func TestLen(t *testing.T) {
 
 	c, _ := Construct(args, optionsNames, optionsWithValue)
 
-	result := c.Len()
+	result := c.Count()
 	if result != 2 {
 		t.Errorf("Command length is: %d ; expected %d", result, 2)
 	}
@@ -77,7 +77,7 @@ func TestLen(t *testing.T) {
 
 	c2, _ := Construct(args2, optionsNames2, optionsWithValue2)
 
-	result2 := c2.Len()
+	result2 := c2.Count()
 	if result2 != 2 {
 		t.Errorf("Command length is: %d ; expected %d", result2, 2)
 	}
@@ -101,7 +101,7 @@ func TestLen(t *testing.T) {
 
 	c3, _ := Construct(args3, optionsNames3, optionsWithValue3)
 
-	result3 := c3.Len()
+	result3 := c3.Count()
 	if result3 != 2 {
 		t.Errorf("Command length is: %d ; expected %d", result3, 2)
 	}
@@ -192,7 +192,7 @@ func TestHasOption(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestGetAt(t *testing.T) {
 	var optionsNames = map[string]string{
 		"help": "h",
 		"test": "t",
@@ -205,7 +205,7 @@ func TestGet(t *testing.T) {
 
 	c, _ := Construct(args, optionsNames, optionsWithValue)
 
-	result := c.Get(0)
+	result, _ := c.GetAt(0)
 	if result != "command1" {
 		t.Errorf("Command 0 is: %s ; expected %s", result, "command1")
 	}
@@ -227,7 +227,7 @@ func TestGet(t *testing.T) {
 
 	c2, _ := Construct(args2, optionsNames2, optionsWithValue2)
 
-	result2 := c2.Get(1)
+	result2, _ := c2.GetAt(1)
 	if result2 != "command2" {
 		t.Errorf("Command 1 is: %s ; expected %s", result, "command2")
 	}
@@ -251,7 +251,7 @@ func TestGet(t *testing.T) {
 
 	c3, _ := Construct(args3, optionsNames3, optionsWithValue3)
 
-	result3 := c3.Get(1)
+	result3, _ := c3.GetAt(1)
 	if result3 != "command2" {
 		t.Errorf("Command 1 is: %s ; expected %s", result, "command2")
 	}

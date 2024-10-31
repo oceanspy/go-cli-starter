@@ -146,4 +146,53 @@ c.GetOption(name string) (string, error)
 
 ## Autocomplete command
 
-WIP
+A simple autocomplete is available.
+
+### Setup:
+
+Create a variable that will hold the yaml data:
+
+```go
+	cmdAutocompleteYaml := `
+command1:
+command2:
+command3:
+  a:
+    wuj:
+    xaaua:
+  b:
+  c:
+  d:
+    y:
+    z:
+`
+```
+
+Each key is a command that will get autocomplete.
+
+To have the autocompletion, just setup a first argument like "cmd", to get the autocompletion:
+
+```go
+// Setup the autocomplete:
+// You can use the command tools to get the parameters without the options:
+cmdAutocomplete := commandautocomplete.Init(cmdAutocompleteYaml, cmd.Get())
+
+switch cmd.GetAt(1) {
+case "cmd":
+    cmdAutocomplete.Get()
+// ...
+default:
+    //...
+}
+```
+
+You can also get the last argument inputted:
+
+```go
+// Get last argument inputted:
+message.Info("Last arg: ", cmdAutocomplete.GetLastArg())
+```
+
+### Oh-my-ZSH
+
+

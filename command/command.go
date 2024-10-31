@@ -5,6 +5,7 @@ import (
 	"github.com/oceanspy/go-cli-starter/message"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -45,7 +46,7 @@ func (c *Command) GetAt(at int) (string, error) {
 		return c.Parameters[at], nil
 	}
 
-	return "", errors.New("No argument found at: " + string(at))
+	return "", errors.New("No argument found at: " + strconv.Itoa(at))
 }
 
 func (c *Command) Get() []string {
