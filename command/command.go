@@ -9,26 +9,73 @@ import (
 )
 
 type Command struct {
-	args     []string
-	options  map[string]string
-	commands []string
+	Raw        []string
+	Options    map[string]string
+	Parameters []string
 }
 
 type Program struct {
-	optionsNames     map[string]string
-	optionsWithValue []string
+	Args             []string
+	OptionsNames     map[string]string
+	OptionsWithValue []string
 }
 
 func Construct(args []string, optionsNames map[string]string, optionsWithValue []string) (*Command, *Program) {
-	p := Program{optionsNames: optionsNames, optionsWithValue: optionsWithValue}
-	cmd := Command{args: args}
+	p := Program{Args: args, OptionsNames: optionsNames, OptionsWithValue: optionsWithValue}
+	cmd := Command{Raw: args}
 	p.extractCommandsAndOptions(&cmd)
 	return &cmd, &p
 }
 
+func (p *Program) ShortToLongOptionName(arg string) (string, error) {
+	for i, v := range p.OptionsNames {
+		if v == arg {
+			return i, nil
+		}
+	}
+	return "", errors.New("Option not found")
+}
+
+func (c *Command) Count() int {
+	return len(c.Parameters)
+}
+
+func (c *Command) GetAt(at int) (string, error) {
+	if len(c.Parameters) > at {
+		return c.Parameters[at], nil
+	}
+
+	return "", errors.New("No argument found at: " + string(at))
+}
+
+func (c *Command) Get() []string {
+	return c.Parameters
+}
+
+func (c *Command) GetRaw() []string {
+	return c.Raw
+}
+
+func (c *Command) HasOption(name string) bool {
+	if _, exists := c.Options[name]; exists {
+		return true
+	}
+
+	return false
+}
+
+func (c *Command) GetOption(name string) (string, error) {
+	if _, exists := c.Options[name]; exists {
+		return c.Options[name], nil
+	}
+
+	return "", errors.New("Option not found")
+
+}
+
 func (p *Program) extractCommandsAndOptions(c *Command) {
 	isOptionValue := false
-	for i, arg := range c.args {
+	for i, arg := range c.Raw {
 		if isOptionValue {
 			isOptionValue = false
 			continue
@@ -38,22 +85,22 @@ func (p *Program) extractCommandsAndOptions(c *Command) {
 		if strings.HasPrefix(arg, "--") {
 			optionName := strings.TrimPrefix(arg, "--")
 
-			if _, ok := p.optionsNames[optionName]; !ok {
+			if _, ok := p.OptionsNames[optionName]; !ok {
 				message.Error("Couldn't parse the command")
 				message.Info("Option", arg, " is not valid")
 				os.Exit(1)
 			}
 
 			optionValue := ""
-			if slices.Contains(p.optionsWithValue, optionName) {
-				optionValue = c.args[i+1]
+			if slices.Contains(p.OptionsWithValue, optionName) {
+				optionValue = c.Raw[i+1]
 				isOptionValue = true
 			}
 
-			if c.options == nil {
-				c.options = make(map[string]string)
+			if c.Options == nil {
+				c.Options = make(map[string]string)
 			}
-			c.options[optionName] = optionValue
+			c.Options[optionName] = optionValue
 
 			continue
 		}
@@ -68,65 +115,27 @@ func (p *Program) extractCommandsAndOptions(c *Command) {
 				os.Exit(1)
 			}
 
-			if _, ok := p.optionsNames[optionName]; !ok {
+			if _, ok := p.OptionsNames[optionName]; !ok {
 				message.Error("Couldn't parse the command")
 				message.Info("Option", arg, " is not valid")
 				os.Exit(1)
 			}
 
 			optionValue := ""
-			if slices.Contains(p.optionsWithValue, optionName) {
-				optionValue = c.args[i+1]
+			if slices.Contains(p.OptionsWithValue, optionName) {
+				optionValue = c.Raw[i+1]
 				isOptionValue = true
 			}
 
-			if c.options == nil {
-				c.options = make(map[string]string)
+			if c.Options == nil {
+				c.Options = make(map[string]string)
 			}
-			c.options[optionName] = optionValue
+			c.Options[optionName] = optionValue
 
 			continue
 		}
 
 		// Else
-		c.commands = append(c.commands, arg)
+		c.Parameters = append(c.Parameters, arg)
 	}
-}
-
-func (p *Program) ShortToLongOptionName(arg string) (string, error) {
-	for i, v := range p.optionsNames {
-		if v == arg {
-			return i, nil
-		}
-	}
-	return "", errors.New("Option not found")
-}
-
-func (c *Command) Count() int {
-	return len(c.commands)
-}
-
-func (c *Command) Get(at int) (string, error) {
-	if len(c.commands) > at {
-		return c.commands[at], nil
-	}
-
-	return "", errors.New("No argument found at: " + string(at))
-}
-
-func (c *Command) HasOption(name string) bool {
-	if _, exists := c.options[name]; exists {
-		return true
-	}
-
-	return false
-}
-
-func (c *Command) GetOption(name string) (string, error) {
-	if _, exists := c.options[name]; exists {
-		return c.options[name], nil
-	}
-
-	return "", errors.New("Option not found")
-
 }
