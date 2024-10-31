@@ -106,8 +106,12 @@ func (c *Command) Count() int {
 	return len(c.commands)
 }
 
-func (c *Command) Get(at int) string {
-	return c.commands[at]
+func (c *Command) Get(at int) (string, error) {
+	if len(c.commands[at]) > at {
+		return c.commands[at], nil
+	}
+
+	return "", errors.New("No argument found at: " + string(at))
 }
 
 func (c *Command) HasOption(name string) bool {
