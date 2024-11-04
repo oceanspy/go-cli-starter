@@ -198,4 +198,54 @@ message.Info("Last arg: ", cmdAutocomplete.GetLastArg())
 
 ### Oh-my-ZSH
 
+You can use this file to put into `~/.oh-my-zsh/completions/`
 
+In order to make it work, change `{{EXEC}}` to your executable.
+
+```zsh
+#compdef {{EXEC}}
+
+# Define the completion function
+_{{EXEC}}_completion() {
+    # Get the current word being completed
+    local current_word
+    current_word="${words[CURRENT]}"
+
+    # Check if the last word on the command line is quoted
+    if [[ $current_word == *"'"* || $current_word == *'"'* ]]; then
+        return
+    fi
+
+    # If this is the first argument, provide completion suggestions based on '{{EXEC}} commands'
+    if [[ CURRENT -eq 2 ]]; then
+        local completion_output
+        completion_output=($({{EXEC}} commands | sed 's/\\ /--TEMP--/g' | tr ' ' '\n'))  # Replace \ with a temporary string, then split
+
+        # Restore the temporary marker back to space before adding completions
+        for word in "${completion_output[@]}"; do
+            word="${word//--TEMP--/ }"  # Replace the temporary string back with space
+            compadd -Q -- "$word"  # Add without quotes
+        done
+        return
+    fi
+
+    # Generate the appropriate completion command based on the number of arguments
+    local completion_command="{{EXEC}} commands"
+    for ((i=2; i<=CURRENT; i++)); do
+        completion_command+=" ${words[i]}"
+    done
+
+    # Execute the completion command and capture the output
+    local completion_output
+    completion_output=($(eval $completion_command | sed 's/\\ /--TEMP--/g' | tr ' ' '\n'))  # Replace \ with a temporary string, then split
+
+    # Add the processed output as completions without quotes
+    for word in "${completion_output[@]}"; do
+        word="${word//--TEMP--/ }"  # Replace the temporary string back with space
+        compadd -Q -- "$word"  # Add without quotes
+    done
+}
+
+# Call the completion function
+compdef _{{EXEC}}_completion {{EXEC}}
+```
