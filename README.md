@@ -170,7 +170,13 @@ command3:
 
 Each key is a command that will get autocomplete.
 
-To have the autocompletion, just setup a first argument like "cmd", to get the autocompletion:
+#### Having file completion in your program:
+
+If you want to get file completion, just return `_file` and a normal autocomplete will be done.
+
+#### How to
+
+To have the autocompletion, just setup a first argument like "commands", to get the autocompletion:
 
 ```go
 // Setup the autocomplete:
@@ -178,7 +184,7 @@ To have the autocompletion, just setup a first argument like "cmd", to get the a
 cmdAutocomplete := commandautocomplete.Init(cmdAutocompleteYaml, cmd.Get())
 
 switch cmd.GetAt(1) {
-case "cmd":
+case "commands":
     autocomplete := cmdAutocomplete.Get()
     if len(autocomplete) > 0 {
         message.Text(autocomplete)
@@ -238,6 +244,12 @@ _{{EXEC}}_completion() {
     # Execute the completion command and capture the output
     local completion_output
     completion_output=($(eval $completion_command | sed 's/\\ /--TEMP--/g' | tr ' ' '\n'))  # Replace \ with a temporary string, then split
+
+    # If '_file' is returned, use file completion
+    if [[ " ${completion_output[*]} " == *" _file "* ]]; then
+        _files
+        return
+    fi
 
     # Add the processed output as completions without quotes
     for word in "${completion_output[@]}"; do
