@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const SYSTEM_AUTOCOMPLETE string = "_file"
+
 type Commands struct {
 	CommandsYamlStr string
 	OsArgs          []string
@@ -56,6 +58,11 @@ func (c *Commands) Get() string {
 		nextLevel = append(nextLevel, kv.key)
 	}
 
+	// if last word is `_file`, it means we need to get a normal file autocomplete
+	if c.GetPenultimateArg() == SYSTEM_AUTOCOMPLETE {
+		return SYSTEM_AUTOCOMPLETE
+	}
+
 	// if current word is the beginning of one or more words of the level, we suggest these one
 	if nothingFoundForLastArg {
 		var autocompleteLastWord []string
@@ -88,6 +95,18 @@ func (c *Commands) GetLastArg() string {
 	}
 
 	return c.OsArgs[len(c.OsArgs)-1]
+}
+
+func (c *Commands) GetPenultimateArg() string {
+	if len(c.OsArgs) == 0 {
+		return ""
+	}
+
+	if len(c.OsArgs) < 2 {
+		return ""
+	}
+
+	return c.OsArgs[len(c.OsArgs)-2]
 }
 
 func (c *Commands) parseYaml() {
