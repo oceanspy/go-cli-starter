@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/oceanspy/go-cli-starter/color"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -151,4 +152,34 @@ func AskBool(message string) bool {
 	}
 
 	return false
+}
+
+func AskRaw(message string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(color.Get("yellow"), message, color.Reset)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return ""
+	}
+
+	return response
+}
+
+func AskInt(message string) int {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(color.Get("yellow"), message, color.Reset)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return 0
+	}
+
+	intResponse, err := strconv.Atoi(strings.TrimSpace(response))
+	if err != nil {
+		fmt.Println("Error converting input to int:", err)
+		return 0
+	}
+
+	return intResponse
 }
