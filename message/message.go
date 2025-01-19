@@ -163,7 +163,7 @@ func AskRaw(message string) string {
 		return ""
 	}
 
-	return response
+	return strings.TrimSpace(response)
 }
 
 func AskInt(message string) int {
