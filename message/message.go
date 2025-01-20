@@ -175,7 +175,12 @@ func AskInt(message string) int {
 		return 0
 	}
 
-	intResponse, err := strconv.Atoi(strings.TrimSpace(response))
+	responseStr := strings.TrimSpace(response)
+	if responseStr == "" {
+		return 0
+	}
+
+	intResponse, err := strconv.Atoi(responseStr)
 	if err != nil {
 		fmt.Println("Error converting input to int:", err)
 		return 0
@@ -193,7 +198,12 @@ func AskFloat(message string) float64 {
 		return 0
 	}
 
-	floatResponse, err := strconv.ParseFloat(strings.TrimSpace(response), 64)
+	responseStr := strings.TrimSpace(response)
+	if responseStr == "" {
+		return 0
+	}
+
+	floatResponse, err := strconv.ParseFloat(responseStr, 64)
 	if err != nil {
 		fmt.Println("Error converting input to int:", err)
 		return 0
