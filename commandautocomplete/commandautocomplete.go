@@ -58,15 +58,14 @@ func (c *Commands) Get() string {
 		nextLevel = append(nextLevel, kv.key)
 	}
 
-	// if last word is `_file`, it means we need to get a normal file autocomplete
-	if c.GetPenultimateArg() == SYSTEM_AUTOCOMPLETE {
-		return SYSTEM_AUTOCOMPLETE
-	}
-
 	// if current word is the beginning of one or more words of the level, we suggest these one
 	if nothingFoundForLastArg {
 		var autocompleteLastWord []string
 		for _, completeLastWord := range nextLevel {
+			if completeLastWord == SYSTEM_AUTOCOMPLETE {
+				return SYSTEM_AUTOCOMPLETE
+			}
+
 			if strings.HasPrefix(completeLastWord, lastArg) {
 				autocompleteLastWord = append(autocompleteLastWord, completeLastWord)
 			}
