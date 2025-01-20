@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/user"
 	"reflect"
+	"strconv"
 )
 
 type Config struct {
@@ -86,6 +87,34 @@ func (c *Config) GetValue(name string) (string, error) {
 func (c *Config) GetValueOrEmpty(name string) string {
 	v, _ := c.GetValue(name)
 	return v
+}
+
+func (c *Config) GetFloat(name string) float64 {
+	strValue := c.GetValueOrEmpty(name)
+	if strValue == "" {
+		return 0
+	}
+
+	value, err := strconv.ParseFloat(strValue, 64)
+	if err != nil {
+		return 0
+	}
+
+	return value
+}
+
+func (c *Config) GetInt(name string) int {
+	strValue := c.GetValueOrEmpty(name)
+	if strValue == "" {
+		return 0
+	}
+
+	value, err := strconv.Atoi(strValue)
+	if err != nil {
+		return 0
+	}
+
+	return value
 }
 
 func (c *Config) GetValues(name string) ([]string, error) {
