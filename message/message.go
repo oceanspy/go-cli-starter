@@ -183,3 +183,21 @@ func AskInt(message string) int {
 
 	return intResponse
 }
+
+func AskFloat(message string) float64 {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print(color.Get("yellow"), message, color.Reset)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return 0
+	}
+
+	floatResponse, err := strconv.ParseFloat(strings.TrimSpace(response), 64)
+	if err != nil {
+		fmt.Println("Error converting input to int:", err)
+		return 0
+	}
+
+	return floatResponse
+}
