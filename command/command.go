@@ -48,6 +48,13 @@ func (c *Command) GetAt(at int) (string, error) {
 
 	return "", errors.New("No argument found at: " + strconv.Itoa(at))
 }
+func (c *Command) GetAfter(nb int) ([]string, error) {
+	if len(c.Parameters) > nb {
+		return c.Parameters[nb:], nil
+	}
+
+	return nil, errors.New("No argument found at: " + strconv.Itoa(nb))
+}
 
 func (c *Command) Get() []string {
 	return c.Parameters
