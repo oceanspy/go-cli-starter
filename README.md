@@ -135,7 +135,10 @@ c.ShortToLongOptionName(arg string) (string, error)
 c.Count() int
 
 // Get command at position:
-c.Get(at int) string
+c.GetAt(at int) string
+
+// Get command after position:
+c.GetAfter(at int) string
 
 // Does the command has the option:
 c.HasOption(name string) bool
