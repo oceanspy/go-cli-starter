@@ -39,20 +39,13 @@ func Error(args ...interface{}) {
 		return
 	}
 
-	message := args[0].(string)
-
-	if len(args) == 1 {
-		fmt.Print("❌ ", color.Get("red"), message, color.Reset)
-		fmt.Println()
-		return
+	fmt.Print("❌ ", color.Get("red"), fmt.Sprint(args[0]), color.Reset)
+	for _, arg := range args[1:] {
+		if arg != nil {
+			fmt.Print(":", arg)
+		}
 	}
-
-	err := args[1].(error)
-	fmt.Print("❌ ", color.Get("red"), message, color.Reset)
-	if err != nil {
-		fmt.Print(":", err)
-		fmt.Println()
-	}
+	fmt.Println()
 }
 
 func Info(message string, args ...interface{}) {
@@ -98,11 +91,13 @@ func FixedTextLength(length int, char rune, messages ...string) {
 }
 
 func adjustTextLength(text string, length int, char rune) string {
-	textLen := len(text)
+	// Count characters (runes), not bytes, so multi-byte characters are never cut in half
+	runes := []rune(text)
+	textLen := len(runes)
 
 	if textLen > length {
 		// If the text is too long, shorten it
-		return text[:length]
+		return string(runes[:max(length, 0)])
 	} else if textLen < length {
 		// If the text is too short, pad it with the given char
 		padding := strings.Repeat(string(char), length-textLen)

@@ -83,9 +83,20 @@ func (c *Command) GetOption(name string) (string, error) {
 
 func (p *Program) extractCommandsAndOptions(c *Command) {
 	isOptionValue := false
+	endOfOptions := false
 	for i, arg := range c.Raw {
 		if isOptionValue {
 			isOptionValue = false
+			continue
+		}
+
+		// After "--", every argument is a parameter, even if it starts with "-"
+		if endOfOptions {
+			c.Parameters = append(c.Parameters, arg)
+			continue
+		}
+		if arg == "--" {
+			endOfOptions = true
 			continue
 		}
 
@@ -101,6 +112,11 @@ func (p *Program) extractCommandsAndOptions(c *Command) {
 
 			optionValue := ""
 			if slices.Contains(p.OptionsWithValue, optionName) {
+				if i+1 >= len(c.Raw) {
+					message.Error("Couldn't parse the command")
+					message.Info("Option", arg, " requires a value")
+					os.Exit(1)
+				}
 				optionValue = c.Raw[i+1]
 				isOptionValue = true
 			}
@@ -131,6 +147,11 @@ func (p *Program) extractCommandsAndOptions(c *Command) {
 
 			optionValue := ""
 			if slices.Contains(p.OptionsWithValue, optionName) {
+				if i+1 >= len(c.Raw) {
+					message.Error("Couldn't parse the command")
+					message.Info("Option", arg, " requires a value")
+					os.Exit(1)
+				}
 				optionValue = c.Raw[i+1]
 				isOptionValue = true
 			}

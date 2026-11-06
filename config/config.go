@@ -3,11 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
-	"os/user"
+	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -15,26 +17,31 @@ type Config struct {
 	YamlFile   []byte
 	Data       interface{}
 	DataLoaded bool
+
+	// Entity is the struct (or pointer to struct) the YAML is loaded into.
+	// When nil, the YAML is loaded into a map.
+	Entity interface{}
 }
 
-func Construct(filepath string, entity interface{}) (Config, error) {
-	// Get current user
-	usr, err := user.Current()
+// Construct reads the YAML file at filepath, relative to the home directory.
+//
+// entity describes the data of the file. With a pointer to a struct, that
+// struct is filled when the data is loaded. With a struct value, a new struct
+// of the same type is filled. With nil, the data is loaded into a map.
+func Construct(path string, entity interface{}) (Config, error) {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Println("Error fetching user:", err)
-		os.Exit(1)
+		return Config{}, fmt.Errorf("Error fetching home directory: %w", err)
 	}
 
-	// Get the home directory
-	homeDir := usr.HomeDir
-	configFilePath := homeDir + "/" + filepath
+	configFilePath := filepath.Join(homeDir, path)
 
 	yamlFile, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return Config{}, errors.New("Error opening config file: " + configFilePath)
 	}
 
-	return Config{Filepath: configFilePath, YamlFile: yamlFile, DataLoaded: false}, nil
+	return Config{Filepath: configFilePath, YamlFile: yamlFile, DataLoaded: false, Entity: entity}, nil
 }
 
 func (c *Config) Get() (interface{}, error) {
@@ -42,46 +49,108 @@ func (c *Config) Get() (interface{}, error) {
 		return c.Data, nil
 	}
 
-	err := yaml.Unmarshal(c.YamlFile, &c.Data)
+	var target interface{}
+	switch {
+	case c.Entity == nil:
+		target = &c.Data
+	case reflect.TypeOf(c.Entity).Kind() == reflect.Ptr && !reflect.ValueOf(c.Entity).IsNil():
+		target = c.Entity
+	default:
+		t := reflect.TypeOf(c.Entity)
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		target = reflect.New(t).Interface()
+	}
+
+	err := yaml.Unmarshal(c.YamlFile, target)
 	if err != nil {
 		return c.Data, errors.New("Error parsing config file. Is it a valid yaml file ?")
 	}
 
+	if c.Entity != nil {
+		c.Data = target
+	}
 	c.DataLoaded = true
 
 	return c.Data, nil
 }
 
-func (c *Config) GetValue(name string) (string, error) {
-	config, err := c.Get()
+// lookup finds the value of name in the loaded data.
+// For a map, name is the key. For a struct, name is the YAML key or the field name.
+func (c *Config) lookup(name string) (reflect.Value, bool, error) {
+	data, err := c.Get()
 	if err != nil {
-		return "", err
+		return reflect.Value{}, false, err
 	}
 
-	v := reflect.ValueOf(config)
-
-	// Handle map type
-	if v.Kind() == reflect.Map {
-		key := reflect.ValueOf(name)
-		value := v.MapIndex(key)
-		if !value.IsValid() {
-			return "", errors.New("Field was not found")
+	v := reflect.ValueOf(data)
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		if v.IsNil() {
+			return reflect.Value{}, false, nil
 		}
-		return fmt.Sprintf("%v", value.Interface()), nil
-	}
-
-	// Ensure that we have a struct and not a pointer to a struct
-	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
 
-	// Check if the field exists
-	field := v.FieldByName(name)
-	if !field.IsValid() {
+	switch v.Kind() {
+	case reflect.Map:
+		if v.Type().Key().Kind() != reflect.String {
+			return reflect.Value{}, false, nil
+		}
+		value := v.MapIndex(reflect.ValueOf(name).Convert(v.Type().Key()))
+		return value, value.IsValid(), nil
+	case reflect.Struct:
+		t := v.Type()
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			if !f.IsExported() {
+				continue
+			}
+			// Without a yaml tag, the YAML key is the lowercased field name
+			key := strings.Split(f.Tag.Get("yaml"), ",")[0]
+			if key == "" {
+				key = strings.ToLower(f.Name)
+			}
+			if key == name || f.Name == name {
+				return v.Field(i), true, nil
+			}
+		}
+	}
+
+	return reflect.Value{}, false, nil
+}
+
+// unwrap follows interfaces and pointers; it returns an invalid value for nil.
+func unwrap(v reflect.Value) reflect.Value {
+	for v.IsValid() && (v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr) {
+		if v.IsNil() {
+			return reflect.Value{}
+		}
+		v = v.Elem()
+	}
+
+	return v
+}
+
+func format(v reflect.Value) string {
+	v = unwrap(v)
+	if !v.IsValid() {
+		return ""
+	}
+
+	return fmt.Sprintf("%v", v.Interface())
+}
+
+func (c *Config) GetValue(name string) (string, error) {
+	value, found, err := c.lookup(name)
+	if err != nil {
+		return "", err
+	}
+	if !found {
 		return "", errors.New("Field was not found")
 	}
 
-	return field.String(), nil
+	return format(value), nil
 }
 
 func (c *Config) GetValueOrEmpty(name string) string {
@@ -117,48 +186,37 @@ func (c *Config) GetInt(name string) int {
 	return value
 }
 
+// GetValues returns the values of a list, or a single value as a one-element list.
+// A missing key in a map, or an empty value, returns an empty list.
+// A missing field in a struct returns an error.
 func (c *Config) GetValues(name string) ([]string, error) {
-	config, err := c.Get()
+	value, found, err := c.lookup(name)
 	if err != nil {
 		return nil, err
 	}
 
-	v := reflect.ValueOf(config)
-
-	// Handle map type
-	if v.Kind() == reflect.Map {
-		key := reflect.ValueOf(name)
-		value := v.MapIndex(key)
-		if !value.IsValid() || value.IsNil() {
-			return []string{}, nil
+	if !found {
+		data := unwrap(reflect.ValueOf(c.Data))
+		if data.IsValid() && data.Kind() == reflect.Struct {
+			return nil, errors.New("Field was not found")
 		}
-		return []string{fmt.Sprintf("%v", value.Interface())}, nil
+		return []string{}, nil
 	}
 
-	// Ensure that we have a struct and not a pointer to a struct
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	value = unwrap(value)
+	if !value.IsValid() {
+		return []string{}, nil
 	}
 
-	// Check if the field exists
-	field := v.FieldByName(name)
-	if !field.IsValid() {
-		return nil, errors.New("Field was not found")
-	}
-
-	// Handle slice type
-	if field.Kind() == reflect.Slice {
-		if field.Len() == 0 {
-			return []string{}, nil
-		}
-		var result []string
-		for i := 0; i < field.Len(); i++ {
-			result = append(result, fmt.Sprintf("%v", field.Index(i).Interface()))
+	if value.Kind() == reflect.Slice || value.Kind() == reflect.Array {
+		result := make([]string, 0, value.Len())
+		for i := 0; i < value.Len(); i++ {
+			result = append(result, format(value.Index(i)))
 		}
 		return result, nil
 	}
 
-	return []string{field.String()}, nil
+	return []string{format(value)}, nil
 }
 
 func (c *Config) GetValuesOrEmpty(name string) []string {

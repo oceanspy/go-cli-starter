@@ -14,6 +14,10 @@ func Print(help Content) {
 	message.Info("Help Center", help.Title)
 
 	for _, line := range help.Lines {
+		if len(line) == 0 {
+			continue
+		}
+
 		switch line[0] {
 		case "title":
 			title := ""

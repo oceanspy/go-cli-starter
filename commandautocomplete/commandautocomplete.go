@@ -1,9 +1,9 @@
 package commandautocomplete
 
 import (
-	"errors"
-	"gopkg.in/yaml.v3"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 const SYSTEM_AUTOCOMPLETE string = "_file"
@@ -12,6 +12,14 @@ type Commands struct {
 	CommandsYamlStr string
 	OsArgs          []string
 	Commands        interface{}
+
+	// root keeps the parsed YAML tree so suggestions follow the order in
+	// which commands are written (a map would lose that order).
+	root *yaml.Node
+
+	// Program options, set with WithOptions
+	optionsNames     map[string]string
+	optionsWithValue []string
 }
 
 func Init(commandsYamlStr string, osArgs []string) *Commands {
@@ -21,12 +29,11 @@ func Init(commandsYamlStr string, osArgs []string) *Commands {
 }
 
 func (c *Commands) Get() string {
-	nextCmds := ""
 	lastArg := c.GetLastArg()
 
-	// For each string, we get the current level and nexts
-	var allNextLevels = c.Commands.(map[string]interface{})
-	var nothingFoundForLastArg = false
+	// For each argument, we move down one level of the command tree
+	level := c.root
+	nothingFoundForLastArg := false
 	for i, cmd := range c.OsArgs {
 		// We skip the two first arguments
 		// 0 = main program
@@ -35,10 +42,14 @@ func (c *Commands) Get() string {
 			continue
 		}
 
-		nextLevels, err := c.getLevel(allNextLevels, cmd)
-		if err != nil {
+		value, exists := lookup(level, cmd)
+		nextLevel := resolve(value)
+		if isFileShorthand(nextLevel) {
+			nextLevel = fileLevel
+		}
+		if nextLevel == nil || nextLevel.Kind != yaml.MappingNode {
 			if len(c.OsArgs) == i+1 {
-				if _, exists := allNextLevels[cmd]; exists {
+				if exists {
 					return ""
 				}
 
@@ -49,14 +60,10 @@ func (c *Commands) Get() string {
 			return ""
 		}
 
-		allNextLevels = nextLevels
+		level = nextLevel
 	}
 
-	// Since map don't keep the order => we transform the map to a slice of struct key/value
-	var nextLevel []string
-	for _, kv := range c.mapToKeyValue(allNextLevels) {
-		nextLevel = append(nextLevel, kv.key)
-	}
+	nextLevel := keys(level)
 
 	// if current word is the beginning of one or more words of the level, we suggest these one
 	if nothingFoundForLastArg {
@@ -70,22 +77,10 @@ func (c *Commands) Get() string {
 				autocompleteLastWord = append(autocompleteLastWord, completeLastWord)
 			}
 		}
-		nextCmds = strings.Join(autocompleteLastWord, " ")
-		return nextCmds
+		return strings.Join(autocompleteLastWord, " ")
 	}
 
-	nextCmds = strings.Join(nextLevel, " ")
-
-	return nextCmds
-}
-
-func (c *Commands) getLevel(allNextLevels map[string]interface{}, cmd string) (map[string]interface{}, error) {
-	nextLevels, ok := allNextLevels[cmd].(map[string]interface{})
-	if !ok {
-		return nextLevels, errors.New("Couldn't find any match -- is Yaml correct ?")
-	}
-
-	return nextLevels, nil
+	return strings.Join(nextLevel, " ")
 }
 
 func (c *Commands) GetLastArg() string {
@@ -97,10 +92,6 @@ func (c *Commands) GetLastArg() string {
 }
 
 func (c *Commands) GetPenultimateArg() string {
-	if len(c.OsArgs) == 0 {
-		return ""
-	}
-
 	if len(c.OsArgs) < 2 {
 		return ""
 	}
@@ -109,25 +100,79 @@ func (c *Commands) GetPenultimateArg() string {
 }
 
 func (c *Commands) parseYaml() {
-	var parsedData interface{}
-
-	err := yaml.Unmarshal([]byte(c.CommandsYamlStr), &parsedData)
-	if err != nil {
+	var root yaml.Node
+	if err := yaml.Unmarshal([]byte(c.CommandsYamlStr), &root); err != nil {
 		panic(err)
 	}
 
+	var parsedData interface{}
+	if err := root.Decode(&parsedData); err != nil {
+		panic(err)
+	}
+
+	c.root = resolve(&root)
 	c.Commands = parsedData
 }
 
-type kv struct {
-	key   string
-	value interface{}
+// fileLevel is a level that only offers file completion, like "cmd: {_file: }".
+var fileLevel = &yaml.Node{
+	Kind: yaml.MappingNode,
+	Content: []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: SYSTEM_AUTOCOMPLETE},
+		{Kind: yaml.ScalarNode, Tag: "!!null"},
+	},
 }
 
-func (c *Commands) mapToKeyValue(m map[string]interface{}) []kv {
-	var kvs []kv
-	for k, v := range m {
-		kvs = append(kvs, kv{key: k, value: v})
+// isFileShorthand reports whether a value is "_file" written without a colon,
+// as in "cmd: _file" or:
+//
+//	cmd:
+//	  _file
+func isFileShorthand(n *yaml.Node) bool {
+	return n != nil && n.Kind == yaml.ScalarNode && n.Value == SYSTEM_AUTOCOMPLETE
+}
+
+// resolve unwraps document and alias nodes to reach the actual content node.
+func resolve(n *yaml.Node) *yaml.Node {
+	for n != nil {
+		switch {
+		case n.Kind == yaml.DocumentNode && len(n.Content) > 0:
+			n = n.Content[0]
+		case n.Kind == yaml.AliasNode:
+			n = n.Alias
+		default:
+			return n
+		}
 	}
-	return kvs
+
+	return nil
+}
+
+// lookup returns the value node of key in a mapping node, and whether the key exists.
+func lookup(mapping *yaml.Node, key string) (*yaml.Node, bool) {
+	if mapping == nil || mapping.Kind != yaml.MappingNode {
+		return nil, false
+	}
+
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		if mapping.Content[i].Value == key {
+			return mapping.Content[i+1], true
+		}
+	}
+
+	return nil, false
+}
+
+// keys returns the keys of a mapping node, in the order they are written.
+func keys(mapping *yaml.Node) []string {
+	if mapping == nil || mapping.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	var result []string
+	for i := 0; i < len(mapping.Content); i += 2 {
+		result = append(result, mapping.Content[i].Value)
+	}
+
+	return result
 }
